@@ -19,7 +19,7 @@
           </a>
         @endguest
         @auth
-          <a href="" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+          <a href="{{ route('dashboard') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
             Dashboard
           </a>
         @endauth
