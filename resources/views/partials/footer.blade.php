@@ -9,7 +9,7 @@
       </div>
       <div class="mt-4 md:mt-0">
         <p class="text-sm">
-          &copy; {{ date('Y') }} {{ config('app.name', 'MagangDiskominfo') }}. All rights reserved.
+          &copy; {{ date('Y') }}.Tim It Postel. All rights reserved.
         </p>
       </div>
     </div>

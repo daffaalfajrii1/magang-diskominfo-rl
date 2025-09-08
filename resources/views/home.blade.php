@@ -8,6 +8,7 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     .gradient-bg { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+    .card-shadow { box-shadow:0 10px 25px rgba(0,0,0,.05); }
   </style>
 @endpush
 
@@ -61,6 +62,56 @@
           </p>
         </div>
       </div>
+    </div>
+
+    {{-- Section Alumni --}}
+    <div class="mt-20">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Alumni Magang Selesai</h2>
+        <a href="{{ route('interns.completed') }}" class="text-blue-600 hover:underline">Lihat Semua →</a>
+      </div>
+
+      @php
+        $alumni = \App\Models\Internship::with('user')
+          ->where('status','completed')
+          ->latest('completed_at')
+          ->take(4)
+          ->get();
+      @endphp
+
+      @if($alumni->count())
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          @foreach($alumni as $a)
+            <div class="bg-white rounded-xl card-shadow overflow-hidden border">
+              <div class="p-5">
+                <div class="flex items-center gap-4">
+                  <img src="{{ $a->photo_url ?? asset('storage/'.$a->photo_path) }}"
+                       onerror="this.src='https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{ urlencode($a->full_name ?? $a->user->name) }}';"
+                       class="h-14 w-14 rounded-full object-cover border">
+                  <div>
+                    <div class="text-base font-semibold text-gray-900">{{ $a->full_name ?? $a->user->name }}</div>
+                    <div class="text-sm text-gray-500">{{ $a->school ?? '—' }}</div>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  @if($a->final_report_path)
+                    <a href="{{ asset('storage/'.$a->final_report_path) }}" target="_blank"
+                       class="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                      Lihat Laporan
+                    </a>
+                  @else
+                    <span class="text-sm text-gray-500">Laporan belum ada</span>
+                  @endif
+                </div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      @else
+        <div class="p-6 bg-white rounded-xl border text-center text-gray-500">
+          Belum ada alumni magang.
+        </div>
+      @endif
     </div>
   </div>
 @endsection

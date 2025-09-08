@@ -39,6 +39,10 @@ class Internship extends Model
 
     public function getPhotoUrlAttribute(): ?string
     {
-    return $this->photo_path ? asset('storage/'.$this->photo_path) : null;
+     return $this->photo_path
+        ? asset('storage/'.$this->photo_path)
+        : 'https://ui-avatars.com/api/?background=0D8ABC&color=fff&name='.urlencode($this->full_name ?? $this->user->name);
     }
+
+    
 }

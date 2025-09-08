@@ -8,9 +8,14 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminInternshipController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\PublicPageController; // ⬅️ TAMBAH INI
 
 // ======= Public / User =======
 Route::get('/', fn () => view('home'))->name('home');
+
+// Halaman publik: Alumni selesai magang (8 / halaman)
+Route::get('/interns/completed', [PublicPageController::class, 'completed'])
+     ->name('interns.completed'); // ⬅️ TAMBAH INI
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -43,7 +48,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        // Users (opsional, daftar user)
+        // Users
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
 
         // Pengajuan / Peserta

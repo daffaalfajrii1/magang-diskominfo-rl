@@ -11,6 +11,8 @@
       </div>
       <div class="flex items-center space-x-4">
         @guest
+        <a href="{{ route('interns.completed') }}" class="text-blue-600 hover:underline">Alumni Magang</a>
+
           <a href="{{ route('register') }}" class="text-blue-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">
             Register
           </a>
