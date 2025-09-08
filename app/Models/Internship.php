@@ -8,12 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Internship extends Model
 {
     protected $fillable = [
-        'user_id','status',
-        'letter_path','letter_uploaded_at',
-        'confirmed_at','approved_by','approval_letter_path',
-        'full_name','whatsapp','school','major','student_id','address',
-        'start_date','end_date','profile_completed_at',
-        'final_report_path','final_report_uploaded_at','completed_at',
+        'user_id','status','letter_path','letter_uploaded_at','confirmed_at',
+        'approved_by','approval_letter_path','full_name','whatsapp','school',
+        'major','student_id','address','start_date','end_date',
+        'profile_completed_at','final_report_path','final_report_uploaded_at',
+        'completed_at','photo_path', 
     ];
 
     protected $casts = [
@@ -36,5 +35,10 @@ class Internship extends Model
         if (!$this->end_date) return false;
         $deadline = $this->end_date->copy()->addDays(10);
         return now()->between($this->end_date, $deadline);
+    }
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+    return $this->photo_path ? asset('storage/'.$this->photo_path) : null;
     }
 }

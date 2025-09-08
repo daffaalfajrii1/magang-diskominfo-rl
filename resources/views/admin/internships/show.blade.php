@@ -16,8 +16,18 @@
       <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">Informasi Pemohon</h6>
-          @php $map=['awaiting_letter'=>'warning','waiting_confirmation'=>'info','active'=>'success','rejected'=>'danger']; @endphp
-          <span class="badge badge-{{ $map[$internship->status] ?? 'light' }}">{{ strtoupper(str_replace('_',' ',$internship->status)) }}</span>
+          @php
+            $map = [
+              'awaiting_letter'      => 'warning',
+              'waiting_confirmation' => 'info',
+              'active'               => 'success',
+              'rejected'             => 'danger',
+              'completed'            => 'secondary',
+            ];
+          @endphp
+          <span class="badge badge-{{ $map[$internship->status] ?? 'light' }}">
+            {{ strtoupper(str_replace('_',' ',$internship->status)) }}
+          </span>
         </div>
         <div class="card-body">
           <dl class="row mb-0">
@@ -39,10 +49,13 @@
             <dt class="col-sm-4">Diunggah</dt>
             <dd class="col-sm-8">{{ optional($internship->letter_uploaded_at)->format('d M Y H:i') ?? '—' }}</dd>
 
-            @if($internship->status==='active')
+            @if(in_array($internship->status,['active','completed']))
               <dt class="col-sm-4">Status Peserta</dt>
               <dd class="col-sm-8">
-                AKTIF sejak {{ optional($internship->confirmed_at)->format('d M Y H:i') ?? '-' }}
+                {{ strtoupper($internship->status) }}
+                @if($internship->confirmed_at)
+                  sejak {{ $internship->confirmed_at->format('d M Y H:i') }}
+                @endif
                 @if($internship->approval_letter_path)
                   • <a target="_blank" href="{{ asset('storage/'.$internship->approval_letter_path) }}" class="btn btn-outline-success btn-sm">Surat Balasan</a>
                 @endif
@@ -52,6 +65,17 @@
             {{-- Biodata --}}
             <dt class="col-sm-12 mt-3" id="biodata"><strong>Biodata Peserta</strong></dt>
             @if($internship->profile_completed_at)
+              {{-- FOTO --}}
+              <dt class="col-sm-4">Foto</dt>
+              <dd class="col-sm-8">
+                @if($internship->photo_path)
+                  <img src="{{ asset('storage/'.$internship->photo_path) }}" alt="Foto Peserta"
+                       class="rounded-circle border" style="height:72px;width:72px;object-fit:cover;">
+                @else
+                  <span class="text-muted">Belum diunggah</span>
+                @endif
+              </dd>
+
               <dt class="col-sm-4">Nama Lengkap</dt><dd class="col-sm-8">{{ $internship->full_name ?? $internship->user->name }}</dd>
               <dt class="col-sm-4">WhatsApp</dt><dd class="col-sm-8">{{ $internship->whatsapp }}</dd>
               <dt class="col-sm-4">Sekolah/Kampus</dt><dd class="col-sm-8">{{ $internship->school }}</dd>

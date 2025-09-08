@@ -46,7 +46,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function internship() {
+    public function internship() 
+    {
     return $this->hasOne(\App\Models\Internship::class);
+    }
+    public function latestInternship()
+    {
+    return $this->hasOne(\App\Models\Internship::class)->latestOfMany();
     }
 }

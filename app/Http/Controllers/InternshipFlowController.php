@@ -34,60 +34,71 @@ class InternshipFlowController extends Controller
     // STEP 3: simpan biodata (hanya saat ACTIVE)
     public function saveProfile(Request $request)
     {
-        $internship = Internship::where('user_id', $request->user()->id)->firstOrFail();
+    $internship = \App\Models\Internship::where('user_id', $request->user()->id)->firstOrFail();
 
-        if ($internship->status !== 'active') {
-            return back()->withErrors('Biodata hanya dapat diisi setelah kamu dinyatakan AKTIF.');
+    if ($internship->status !== 'active') {
+        return back()->withErrors('Biodata hanya dapat diisi setelah kamu dinyatakan AKTIF.');
+    }
+
+    $data = $request->validate([
+        'full_name'  => ['required','string','max:150'],
+        'whatsapp'   => ['required','string','max:30'],
+        'school'     => ['required','string','max:150'],
+        'major'      => ['required','string','max:150'],
+        'student_id' => ['nullable','string','max:50'],
+        'address'    => ['required','string','max:1000'],
+        'start_date' => ['required','date'],
+        'end_date'   => ['required','date','after_or_equal:start_date'],
+        // ⬇️ foto opsional
+        'photo'      => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+    ]);
+
+    // handle foto (opsional)
+    if ($request->hasFile('photo')) {
+        if ($internship->photo_path && \Storage::disk('public')->exists($internship->photo_path)) {
+            \Storage::disk('public')->delete($internship->photo_path);
         }
+        $photoPath = $request->file('photo')->store('internship/photos','public');
+        $data['photo_path'] = $photoPath;
+    }
 
-        $data = $request->validate([
-            'full_name'  => ['required','string','max:150'],
-            'whatsapp'   => ['required','string','max:30'],
-            'school'     => ['required','string','max:150'],
-            'major'      => ['required','string','max:150'],
-            'student_id' => ['nullable','string','max:50'],
-            'address'    => ['required','string','max:1000'],
-            'start_date' => ['required','date'],
-            'end_date'   => ['required','date','after_or_equal:start_date'],
-        ]);
+    $internship->update($data + [
+        'profile_completed_at' => now(),
+    ]);
 
-        $internship->update(array_merge($data, [
-            'profile_completed_at' => now(),
-        ]));
-
-        return back()->with('success','Biodata tersimpan.');
+    return back()->with('success','Biodata tersimpan.');
     }
 
     // STEP 4: upload laporan akhir (maks 10 hari setelah selesai)
     public function uploadFinalReport(Request $request)
     {
-        $internship = Internship::where('user_id', $request->user()->id)->firstOrFail();
+    $internship = \App\Models\Internship::where('user_id', $request->user()->id)->firstOrFail();
 
-        if ($internship->status !== 'active') {
-            return back()->withErrors('Laporan hanya dapat diunggah untuk peserta AKTIF.');
-        }
+    if ($internship->status !== 'active') {
+        return back()->withErrors('Laporan hanya dapat diunggah untuk peserta AKTIF.');
+    }
+    if (!$internship->end_date) {
+        return back()->withErrors('Lengkapi tanggal selesai magang pada biodata terlebih dahulu.');
+    }
 
-        if (!$internship->end_date) {
-            return back()->withErrors('Lengkapi tanggal selesai magang pada biodata terlebih dahulu.');
-        }
+    $deadline = $internship->end_date->copy()->addDays(10);
+    if (now()->greaterThan($deadline)) {
+        return back()->withErrors('Batas waktu unggah laporan telah lewat (maksimal 10 hari setelah selesai).');
+    }
 
-        $deadline = $internship->end_date->copy()->addDays(10);
-        if (now()->greaterThan($deadline)) {
-            return back()->withErrors('Batas waktu unggah laporan telah lewat (maksimal 10 hari setelah selesai).');
-        }
+    $request->validate([
+        'final_report' => ['required','file','mimes:pdf','max:10240'],
+    ]);
 
-        $request->validate([
-            'final_report' => ['required','file','mimes:pdf','max:10240'],
-        ], ['final_report.mimes' => 'File laporan harus PDF.']);
+    $path = $request->file('final_report')->store('internship/final_reports', 'public');
 
-        $path = $request->file('final_report')->store('internship/final_reports', 'public');
+    $internship->update([
+        'final_report_path'        => $path,
+        'final_report_uploaded_at' => now(),
+        'completed_at'             => now(),
+        'status'                   => 'completed',   // ⬅️ penting
+    ]);
 
-        $internship->update([
-            'final_report_path'        => $path,
-            'final_report_uploaded_at' => now(),
-            'completed_at'             => now(),
-        ]);
-
-        return back()->with('success','Laporan akhir berhasil diunggah. Terima kasih!');
+    return back()->with('success','Laporan akhir berhasil diunggah. Status kamu: Selesai Magang.');
     }
 }

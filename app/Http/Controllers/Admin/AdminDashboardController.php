@@ -17,21 +17,21 @@ class AdminDashboardController extends Controller
      * - all_internships: total pengajuan
      */
     public function index()
-    {
-        $counts = [
-        'waiting'  => \App\Models\Internship::where('status','waiting_confirmation')
-                        ->whereHas('user', fn($q) => $q->where('role','user')) // ⬅️ exclude admin
-                        ->count(),
-        'approved' => \App\Models\Internship::where('status','confirmed')
-                        ->whereHas('user', fn($q) => $q->where('role','user'))
-                        ->count(),
-        'active'   => \App\Models\Internship::where('status','confirmed')
-                        ->whereHas('user', fn($q) => $q->where('role','user'))
-                        ->count(), // (sementara = confirmed)
-        'users'    => \App\Models\User::where('role','user')->count(), // ⬅️ hanya user
-        'all_internships' => \App\Models\Internship::whereHas('user', fn($q) => $q->where('role','user'))->count(),
-        ];
+     {
+        $base = Internship::whereHas('user', fn($q) => $q->where('role','user'));
 
-        return view('admin.dashboard', compact('counts'));
+        $newSubmissions = (clone $base)->where('status','waiting_confirmation')->count();
+        $active         = (clone $base)->where('status','active')->count();
+        $completed      = (clone $base)->where('status','completed')->count();
+
+        // Disetujui = yang sudah DISETUJUI & MASIH BERJALAN (active saja, tidak termasuk completed)
+        $approved       = $active;
+
+        $usersCount     = User::where('role','user')->count();
+        $totalInt       = (clone $base)->count();
+
+        return view('admin.dashboard', compact(
+            'newSubmissions','approved','active','completed','usersCount','totalInt'
+        ));
     }
 }

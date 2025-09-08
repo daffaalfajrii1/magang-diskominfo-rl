@@ -20,31 +20,49 @@
         <tbody>
           @forelse($users as $u)
             <tr>
+              {{-- nomor urut sesuai pagination --}}
               <td>{{ $loop->iteration + ($users->currentPage()-1)*$users->perPage() }}</td>
+
+              {{-- data akun --}}
               <td>{{ $u->name }}</td>
               <td>{{ $u->email }}</td>
-              <td><span class="badge badge-{{ $u->role==='admin'?'primary':'secondary' }}">{{ $u->role }}</span></td>
+
+              {{-- role --}}
+              <td>
+                <span class="badge badge-{{ $u->role==='admin'?'primary':'secondary' }}">
+                  {{ strtoupper($u->role) }}
+                </span>
+              </td>
+
+              {{-- status magang (dari internship terbaru) --}}
               <td>
                 @php
-                  $st = $u->internship?->status ?? '—';
+                  $st = $u->latestInternship?->status ?? null;
                   $map = [
-                    'awaiting_letter'=>'warning',
-                    'waiting_confirmation'=>'info',
-                    'confirmed'=>'success',
-                    'rejected'=>'danger'
+                    'awaiting_letter'      => ['AWAITING LETTER','warning'],
+                    'waiting_confirmation' => ['WAITING CONFIRMATION','info'],
+                    'active'               => ['ACTIVE','success'],
+                    'rejected'             => ['REJECTED','danger'],
+                    'completed'            => ['COMPLETED','dark'],
                   ];
-                  $cls = $map[$st] ?? 'light';
+                  [$label,$cls] = $map[$st] ?? ['—','light'];
                 @endphp
-                <span class="badge badge-{{ $cls }}">{{ strtoupper(str_replace('_',' ',$st)) }}</span>
+                <span class="badge badge-{{ $cls }}">{{ $label }}</span>
               </td>
+
+              {{-- tanggal registrasi akun --}}
               <td>{{ $u->created_at->format('d M Y') }}</td>
             </tr>
           @empty
-            <tr><td colspan="6" class="text-center text-muted">Belum ada pengguna.</td></tr>
+            <tr>
+              <td colspan="6" class="text-center text-muted">Belum ada pengguna.</td>
+            </tr>
           @endforelse
         </tbody>
       </table>
     </div>
+
+    {{-- pagination --}}
     @if($users->hasPages())
       <div class="card-footer">{{ $users->links() }}</div>
     @endif
