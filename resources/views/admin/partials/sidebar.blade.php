@@ -14,7 +14,11 @@
   </li>
 
   {{-- (nanti) menu Konfirmasi Surat, Peserta Aktif, Pesan, dll --}}
-  {{-- <li class="nav-item"><a class="nav-link" href="{{ route('admin.submissions') }}"><i class="fas fa-fw fa-inbox"></i><span>Pengajuan</span></a></li> --}}
+  <li class="nav-item {{ request()->routeIs('admin.internships.active') ? 'active' : '' }}">
+  <a href="{{ route('admin.internships.index', ['status' => 'active']) }}">Peserta Aktif</a>
+
+</li>
+
 
   <hr class="sidebar-divider d-none d-md-block">
   <div class="text-center d-none d-md-inline">

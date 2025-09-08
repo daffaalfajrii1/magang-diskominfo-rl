@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Internship;
 use Illuminate\Http\Request;
+use App\Models\Internship;
 
 class UserDashboardController extends Controller
 {
     public function show(Request $request) {
-        // Pastikan setiap user punya 1 record internship
-        $internship = Internship::firstOrCreate(
-            ['user_id' => $request->user()->id],
-            ['status' => 'awaiting_letter']
-        );
+        $user = $request->user();
 
-        return view('dashboard', [
-            'user'        => $request->user(),
-            'internship'  => $internship,
-        ]);
+        if ($user->role !== 'user') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        $internship = Internship::with(['messages.admin'])
+            ->firstOrCreate(
+                ['user_id' => $user->id],
+                ['status'  => 'awaiting_letter']
+            );
+
+        return view('dashboard', compact('user','internship'));
     }
 }

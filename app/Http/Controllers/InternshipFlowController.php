@@ -7,36 +7,87 @@ use Illuminate\Http\Request;
 
 class InternshipFlowController extends Controller
 {
-    public function uploadLetter(Request $request) {
-        // Validasi file: hanya PDF, max 5MB
+    // STEP 1: upload surat pemohon
+    public function uploadLetter(Request $request)
+    {
         $request->validate([
             'letter' => ['required','file','mimes:pdf','max:5120'],
-        ], [
-            'letter.mimes' => 'File harus PDF.',
-        ]);
+        ], ['letter.mimes' => 'File surat harus PDF.']);
 
-        // Cari/buat record internship milik user
         $internship = Internship::firstOrCreate(
             ['user_id' => $request->user()->id],
-            ['status' => 'awaiting_letter']
+            ['status'  => 'awaiting_letter']
         );
 
-        // Cegah upload ulang saat sudah menunggu konfirmasi
-        if ($internship->status !== 'awaiting_letter') {
-            return back()->withErrors('Tahap upload surat sudah dilakukan atau menunggu konfirmasi admin.');
-        }
-
-        // Simpan file ke storage/app/public/internship/letters
         $path = $request->file('letter')->store('internship/letters', 'public');
 
-        // Update status dan jejak waktu
         $internship->update([
             'letter_path'        => $path,
             'letter_uploaded_at' => now(),
+            // begitu upload, status jadi waiting_confirmation
             'status'             => 'waiting_confirmation',
         ]);
 
-        return back()->with('success', 'Surat berhasil diunggah. Menunggu konfirmasi admin.');
+        return back()->with('success','Surat berhasil diunggah, menunggu konfirmasi admin.');
+    }
+
+    // STEP 3: simpan biodata (hanya saat ACTIVE)
+    public function saveProfile(Request $request)
+    {
+        $internship = Internship::where('user_id', $request->user()->id)->firstOrFail();
+
+        if ($internship->status !== 'active') {
+            return back()->withErrors('Biodata hanya dapat diisi setelah kamu dinyatakan AKTIF.');
+        }
+
+        $data = $request->validate([
+            'full_name'  => ['required','string','max:150'],
+            'whatsapp'   => ['required','string','max:30'],
+            'school'     => ['required','string','max:150'],
+            'major'      => ['required','string','max:150'],
+            'student_id' => ['nullable','string','max:50'],
+            'address'    => ['required','string','max:1000'],
+            'start_date' => ['required','date'],
+            'end_date'   => ['required','date','after_or_equal:start_date'],
+        ]);
+
+        $internship->update(array_merge($data, [
+            'profile_completed_at' => now(),
+        ]));
+
+        return back()->with('success','Biodata tersimpan.');
+    }
+
+    // STEP 4: upload laporan akhir (maks 10 hari setelah selesai)
+    public function uploadFinalReport(Request $request)
+    {
+        $internship = Internship::where('user_id', $request->user()->id)->firstOrFail();
+
+        if ($internship->status !== 'active') {
+            return back()->withErrors('Laporan hanya dapat diunggah untuk peserta AKTIF.');
+        }
+
+        if (!$internship->end_date) {
+            return back()->withErrors('Lengkapi tanggal selesai magang pada biodata terlebih dahulu.');
+        }
+
+        $deadline = $internship->end_date->copy()->addDays(10);
+        if (now()->greaterThan($deadline)) {
+            return back()->withErrors('Batas waktu unggah laporan telah lewat (maksimal 10 hari setelah selesai).');
+        }
+
+        $request->validate([
+            'final_report' => ['required','file','mimes:pdf','max:10240'],
+        ], ['final_report.mimes' => 'File laporan harus PDF.']);
+
+        $path = $request->file('final_report')->store('internship/final_reports', 'public');
+
+        $internship->update([
+            'final_report_path'        => $path,
+            'final_report_uploaded_at' => now(),
+            'completed_at'             => now(),
+        ]);
+
+        return back()->with('success','Laporan akhir berhasil diunggah. Terima kasih!');
     }
 }
-
